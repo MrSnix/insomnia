@@ -9,15 +9,12 @@ const isMac = () => getAppPlatform() === 'darwin';
 const isLinux = () => getAppPlatform() === 'linux';
 const isWindows = () => getAppPlatform() === 'win32';
 
-export const isBuild = () => process.env.BUNDLE === 'build';
-export const isPackage = () => process.env.BUNDLE === 'package';
-
-const spectronConfig = (appId, appName) => {
+const spectronConfig = appId => {
   let packagePathSuffix = '';
   if (isWindows()) {
-    packagePathSuffix = path.join('win-unpacked', `${appName}.exe`);
+    packagePathSuffix = 'win-unpacked/Insomnia.exe';
   } else if (isMac()) {
-    packagePathSuffix = path.join('mac', `${appName}.app`, 'Contents', 'MacOS', appName);
+    packagePathSuffix = 'mac/Insomnia.app/Contents/MacOS/Insomnia';
   } else if (isLinux()) {
     packagePathSuffix = ''; // TODO: find out what this is
   }
@@ -30,17 +27,17 @@ const spectronConfig = (appId, appName) => {
 };
 
 export const launchCore = async () => {
-  const config = spectronConfig(APP_ID_INSOMNIA, 'Insomnia');
+  const config = spectronConfig(APP_ID_INSOMNIA);
   return await launch(config);
 };
 
 export const launchDesigner = async () => {
-  const config = spectronConfig(APP_ID_DESIGNER, 'Insomnia Designer');
+  const config = spectronConfig(APP_ID_DESIGNER);
   return await launch(config);
 };
 
 const getLaunchPath = config =>
-  isPackage()
+  process.env.BUNDLE === 'package'
     ? { path: config.packagePath }
     : {
         path: electronPath,
