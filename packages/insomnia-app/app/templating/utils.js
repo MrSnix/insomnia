@@ -2,7 +2,6 @@
 
 import type { PluginArgumentEnumOption } from './extensions';
 import objectPath from 'objectpath';
-import type { PluginStore } from '../plugins/context';
 
 export type NunjucksParsedTagArg = {
   type: 'string' | 'number' | 'boolean' | 'variable' | 'expression' | 'enum' | 'file' | 'model',
@@ -22,16 +21,9 @@ export type NunjucksParsedTagArg = {
   extensions?: Array<string>,
 };
 
-export type NunjucksActionTag = {
-  name: string,
-  icon?: string,
-  run: (context: PluginStore) => Promise<void>,
-};
-
 export type NunjucksParsedTag = {
   name: string,
   args: Array<NunjucksParsedTagArg>,
-  actions: Array<NunjucksActionTag>,
   rawValue?: string,
   displayName?: string,
   description?: string,

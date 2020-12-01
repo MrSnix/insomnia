@@ -46,10 +46,6 @@ export default class BaseExtension {
     return this._ext.args || [];
   }
 
-  getActions() {
-    return this._ext.actions || [];
-  }
-
   isDeprecated() {
     return this._ext.deprecated || false;
   }
