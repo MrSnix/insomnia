@@ -32,7 +32,6 @@ type Item = {|
 |};
 
 type State = {|
-  loading: boolean,
   branch: string,
   message: string,
   items: {
@@ -41,7 +40,6 @@ type State = {|
 |};
 
 const INITIAL_STATE: State = {
-  loading: false,
   branch: '',
   message: '',
   items: {},
@@ -175,12 +173,6 @@ class GitStagingModal extends React.PureComponent<Props, State> {
   async _refresh(callback?: () => void) {
     const { vcs, workspace } = this.props;
 
-    this.setState({ loading: true });
-
-    // Get and set branch name
-    const branch = await vcs.getBranch();
-    this.setState({ branch });
-
     // Cache status names
     const docs = await withDescendants(workspace);
     const allPaths = await this.getAllPaths();
@@ -247,7 +239,8 @@ class GitStagingModal extends React.PureComponent<Props, State> {
       };
     }
 
-    this.setState({ items, loading: false }, callback);
+    const branch = await vcs.getBranch();
+    this.setState({ items, branch }, callback);
   }
 
   renderOperation(item: Item) {
@@ -362,68 +355,64 @@ class GitStagingModal extends React.PureComponent<Props, State> {
     );
   }
 
-  _renderEmpty() {
-    const { loading } = this.state;
-
-    if (loading) {
-      return <>Loading...</>;
-    }
-
-    return <>No changes to commit.</>;
-  }
-
-  _renderItems(items: Array<Item>) {
-    const { message } = this.state;
-
-    const newItems = items.filter(i => i.status.includes('added'));
-    const existingItems = items.filter(i => !i.status.includes('added'));
-
-    return (
-      <>
-        <div className="form-control form-control--outlined">
-          <textarea
-            ref={this._setTextareaRef}
-            rows="3"
-            required
-            placeholder="A descriptive message to describe changes made"
-            defaultValue={message}
-            onChange={this._handleMessageChange}
-          />
-        </div>
-        {this.renderTable('Modified Objects', existingItems, 'Rollback all')}
-        {this.renderTable('Unversioned Objects', newItems, 'Delete all')}
-      </>
-    );
-  }
-
   render() {
-    const { items, branch, loading } = this.state;
+    const { items, message, branch } = this.state;
 
     const itemsList = Object.keys(items).map(k => items[k]);
-    const hasChanges = !!itemsList.length;
+    let body = null;
+    if (itemsList.length === 0) {
+      body = (
+        <>
+          <ModalHeader>Commit Changes</ModalHeader>
+          <ModalBody className="wide pad">No changes to commit.</ModalBody>
+          <ModalFooter>
+            <div className="margin-left italic txt-sm tall">
+              <i className="fa fa-code-fork" /> {branch}
+            </div>
+            <div>
+              <button className="btn" onClick={this._hideModal}>
+                Close
+              </button>
+            </div>
+          </ModalFooter>
+        </>
+      );
+    } else {
+      const newItems = itemsList.filter(i => i.status.includes('added'));
+      const existingItems = itemsList.filter(i => !i.status.includes('added'));
 
-    return (
-      <Modal ref={this._setModalRef}>
-        <ModalHeader>Commit Changes</ModalHeader>
-        <ModalBody className="wide pad">
-          {hasChanges ? this._renderItems(itemsList) : this._renderEmpty()}
-        </ModalBody>
-        <ModalFooter>
-          <div className="margin-left italic txt-sm tall">
-            <i className="fa fa-code-fork" /> {branch}{' '}
-            {loading && <i className="fa fa-refresh fa-spin" />}
-          </div>
-          <div>
-            <button className="btn" onClick={this._hideModal}>
-              Close
-            </button>
-            <button className="btn" onClick={this._handleCommit} disabled={loading || !hasChanges}>
-              Commit
-            </button>
-          </div>
-        </ModalFooter>
-      </Modal>
-    );
+      body = (
+        <>
+          <ModalHeader>Commit Changes</ModalHeader>
+          <ModalBody className="wide pad">
+            <div className="form-control form-control--outlined">
+              <textarea
+                ref={this._setTextareaRef}
+                rows="3"
+                required
+                placeholder="A descriptive message to describe changes made"
+                defaultValue={message}
+                onChange={this._handleMessageChange}
+              />
+            </div>
+            {this.renderTable('Modified Objects', existingItems, 'Rollback all')}
+            {this.renderTable('Unversioned Objects', newItems, 'Delete all')}
+          </ModalBody>
+          <ModalFooter>
+            <div className="margin-left italic txt-sm tall">
+              <i className="fa fa-code-fork" /> {branch}
+            </div>
+            <div>
+              <button className="btn" onClick={this._handleCommit}>
+                Commit
+              </button>
+            </div>
+          </ModalFooter>
+        </>
+      );
+    }
+
+    return <Modal ref={this._setModalRef}>{body}</Modal>;
   }
 }
 
